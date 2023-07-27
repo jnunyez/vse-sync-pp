@@ -193,3 +193,48 @@ class TimeErrorAnalyzerBase(Analyzer):
             'duration': data.iloc[-1].timestamp - data.iloc[0].timestamp,
             'terror': self._statistics(data.terror, 'ns'),
         }
+
+class ClockClassAnalyzerBase(Analyzer):
+    """Analyze observed clock state transitions.
+
+    """
+    def __init__(self, config):
+        super().__init__(config)
+        # minimum test duration for a valid test
+        self._duration = config.parameter('min-test-duration/s')
+    def prepare(self, rows):
+        idx = 0
+        try:
+            tstart = rows[0].timestamp + self._transient
+        except IndexError:
+            pass
+        else:
+            while idx < len(rows):
+                if tstart <= rows[idx].timestamp:
+                    break
+                idx += 1
+        return super().prepare(rows[idx:])
+    def test(self, data):
+        if len(data) == 0:
+            return (False, "no data")
+            return (False, "loss of lock")
+        # a transition that is unacceptable
+        #
+        # read clock class change
+        # there has been a transition 
+        # identify the transition
+        # ok sendEvent to FSM
+        # compare states
+
+        if data.iloc[-1].timestamp - data.iloc[0].timestamp < self._duration:
+            return (False, "short test duration")
+        if len(data) - 1 < self._duration:
+            return (False, "short test samples")
+        return (True, None)
+    def explain(self, data):
+        if len(data) == 0:
+            return {}
+        return {
+            'duration': data.iloc[-1].timestamp - data.iloc[0].timestamp,
+            'status': "Proper transition of states" 
+        }
